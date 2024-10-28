@@ -1,23 +1,24 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
 
 class ScaledDotProductAttention(nn.Module):
     ''' Scaled Dot-Product Attention '''
 
-    def __init__(self, temperature, attn_dropout=0.1):
+    def __init__(self, d_tensor, attn_dropout=0.1):
         super().__init__()
-        self.temperature = temperature
+        self.scale = math.sqrt(d_tensor)
         self.dropout = nn.Dropout(attn_dropout)
 
     def forward(self, q, k, v, mask=None):
-
-        attn = torch.matmul(q / self.temperature, k.transpose(2, 3))
+        # calculate the scaled dot product attention
+        attn = torch.matmul(q, k.transpose(2, 3)) / self.scale # 最后两个维度相乘，所以进行张量最后两个维度的转置
 
         if mask is not None:
-            attn = attn.masked_fill(mask == 0, -1e9)
+            attn = attn.masked_fill(mask == 0, float('-inf'))
 
-        attn = self.dropout(F.softmax(attn, dim=-1))
+        attn = self.dropout(F.softmax(attn, dim=-1)) # 在最后一个维度上计算
         output = torch.matmul(attn, v)
 
         return output, attn
@@ -38,7 +39,7 @@ class MultiHeadAttention(nn.Module):
         self.w_vs = nn.Linear(d_model, n_head * d_v, bias=False)
         self.fc = nn.Linear(n_head * d_v, d_model, bias=False)
 
-        self.attention = ScaledDotProductAttention(temperature=d_k ** 0.5)
+        self.attention = ScaledDotProductAttention(d_tensor=d_k)
 
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-6)
@@ -53,12 +54,11 @@ class MultiHeadAttention(nn.Module):
 
         # Pass through the pre-attention projection: b x lq x (n*dv)
         # Separate different heads: b x lq x n x dv
-        q = self.w_qs(q).view(sz_b, len_q, n_head, d_k)
-        k = self.w_ks(k).view(sz_b, len_k, n_head, d_k)
-        v = self.w_vs(v).view(sz_b, len_v, n_head, d_v)
-
         # Transpose for attention dot product: b x n x lq x dv
-        q, k, v = q.transpose(1, 2), k.transpose(1, 2), v.transpose(1, 2)
+        q = self.w_qs(q).view(sz_b, len_q, n_head, d_k).transpose(1, 2)
+        k = self.w_ks(k).view(sz_b, len_k, n_head, d_k).transpose(1, 2)
+        v = self.w_vs(v).view(sz_b, len_v, n_head, d_v).transpose(1, 2)
+
 
         if mask is not None:
             mask = mask.unsqueeze(1)   # For head axis broadcasting.
