@@ -1,6 +1,6 @@
 import torch.nn as nn
 import torch
-from Transformer.Modules import MultiHeadAttention, PositionwiseFeedForward
+from Modules import MultiHeadAttention, PositionwiseFeedForward
 
 
 class EncoderLayer(nn.Module):
@@ -8,7 +8,9 @@ class EncoderLayer(nn.Module):
 
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1):
         super(EncoderLayer, self).__init__()
+        # 在统一输入序列的不同位置之间捕捉依赖关系
         self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        # 两层前馈网络，对每个位置进行独立且相同的非线性变换，常使用 ReLU 激活函数和线性变换
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
 
     def forward(self, enc_input, slf_attn_mask=None):
@@ -23,7 +25,9 @@ class DecoderLayer(nn.Module):
 
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1):
         super(DecoderLayer, self).__init__()
+        # multi head self attention, 捕捉目标序列内部依赖
         self.slf_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
+        # 捕捉目标和源的内部依赖关系，为解码提供上下文信息
         self.enc_attn = MultiHeadAttention(n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
 

@@ -18,7 +18,7 @@ from learn_bpe import learn_bpe
 from apply_bpe import BPE
 
 
-__author__ = "Yu-Hsiang Huang"
+__author__ = "Zizhou Ouyang"
 
 
 _TRAIN_DATA_SOURCES = [
