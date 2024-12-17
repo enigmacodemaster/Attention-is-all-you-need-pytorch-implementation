@@ -4,6 +4,16 @@ import torch.nn.functional as F
 import math
 import logging
 
+'''
+注意力机制的主要操作包括：
+1. 计算注意力权重
+attn = softmax(QK^T / \sqrt{d_k} ) # attn 维度 -> (batch_size, n_head, len_q, len_k)
+2. 将注意力权重应用到值(v)上，得到最终的输出
+output = attn x V 
+通常情况下，len_k 和 len_v 是相同的（因为 K 和 V 来自相同的输入），即 len_k = len_v。因此，v 的实际形状可以视为 (batch_size, n_head, len_k, d_v)。
+'''
+
+
 # 缩放点积 注意力
 # 关键词: 点积
 class ScaledDotProductAttention(nn.Module):
@@ -39,7 +49,7 @@ class ScaledDotProductAttention(nn.Module):
 class MultiHeadAttention(nn.Module):
     ''' Multi-Head Attention module '''
     # n_head: 注意力头的数量
-    # d_model: 输入和输出特征的维度
+    # d_model: 输入和输出特征的维度，也是嵌入的维度
     # d_k: 每个头的键/查询维度
     # d_v: 每个头的值查询维度
     # 
@@ -122,10 +132,10 @@ class PositionwiseFeedForward(nn.Module):
 
 '''
 positional encoding method
-d_model: embedding vector dimension
-max_len: max sequence length model can handel
+d_model: 嵌入向量维度
+max_len: 模型能够处理的最大序列长度
 device: computing, cpu or cuda
-给输入序列添加位置信息，transformer不自带位置编码能力
+给输入序列添加位置信息, transformer不自带位置编码能力
 '''
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, n_position=200, device='cpu'):
@@ -145,3 +155,9 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         return x + self.pos_table[:, :x.size(1)].clone().detach()
+    
+# 输入序列 -> 嵌入层 + 位置编码 -> 多头注意力 -> 残差连接 + 层归一化 -> 前馈网络 -> 残差连接 + 层归一化 -> 输出
+# 并行计算： 多头注意力使得模型能够并行学习不同的表示子空间，增强了建模能力。
+# 位置编码： 通过引入固定的或可训练的位置编码，使得模型能够利用序列中元素的位置信息。
+# 规范化与正则化： 残差连接、层归一化和Dropout帮助模型在训练深层网络时保持稳定性和泛化能力。
+
