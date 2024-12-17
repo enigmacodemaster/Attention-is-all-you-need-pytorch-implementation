@@ -35,8 +35,8 @@ class DecoderLayer(nn.Module):
             self, dec_input, enc_output,
             slf_attn_mask=None, dec_enc_attn_mask=None):
         dec_output, dec_slf_attn = self.slf_attn(
-            dec_input, dec_input, dec_input, mask=slf_attn_mask)
+            dec_input, dec_input, dec_input, mask=slf_attn_mask) # 目标自注意力
         dec_output, dec_enc_attn = self.enc_attn(
-            dec_output, enc_output, enc_output, mask=dec_enc_attn_mask)
-        dec_output = self.pos_ffn(dec_output)
+            dec_output, enc_output, enc_output, mask=dec_enc_attn_mask) # enc-dec注意力
+        dec_output = self.pos_ffn(dec_output) # position wise feed forward
         return dec_output, dec_slf_attn, dec_enc_attn
