@@ -3,6 +3,10 @@ import torch
 from Modules import MultiHeadAttention, PositionwiseFeedForward
 
 
+# d_model: embedded dimension
+# d_inner: 前馈网络中间隐藏层维度
+# d_k: query/key dimension
+# d_v: val dimension
 class EncoderLayer(nn.Module):
     ''' Compose with two layers '''
 

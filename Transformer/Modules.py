@@ -36,12 +36,12 @@ class ScaledDotProductAttention(nn.Module):
             attn = attn.masked_fill(mask == 0, float('-inf'))
 
         attn = self.dropout(F.softmax(attn, dim=-1)) # 在最后一个维度上计算
-        output = torch.matmul(attn, v)
+        output = torch.matmul(attn, v) # (batch_size, n_head, len_q, d_v)
         logging.info("scaled dot product output shape: %s", output.shape)
         return output, attn
 
 # 多头注意力：整体过程步骤总结
-# - 线性变换和分头： 输入经过线性投影后拆分成多个头。
+# - 线性变换和分头： embedding的输入经过线性投影后拆分成多个头。
 # - 独立注意力计算： 每个头独立计算注意力。
 # - 合并头输出： 将各头的输出拼接起来，并经过线性变换恢复原始维度。
 # - 残差连接和归一化： 保持梯度流动和稳定训练。
@@ -49,10 +49,10 @@ class ScaledDotProductAttention(nn.Module):
 class MultiHeadAttention(nn.Module):
     ''' Multi-Head Attention module '''
     # n_head: 注意力头的数量
-    # d_model: 输入和输出特征的维度，也是嵌入的维度
+    # d_model: embedding size
     # d_k: 每个头的键/查询维度
     # d_v: 每个头的值查询维度
-    # 
+    # 一般来说 d_k == d_v，可以不一样
     def __init__(self, n_head, d_model, d_k, d_v, dropout=0.1):
         super().__init__()
 
